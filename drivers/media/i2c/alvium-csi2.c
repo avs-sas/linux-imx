@@ -2850,7 +2850,13 @@ static long alvium_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 	return -ENOIOCTLCMD;
 }
 
+static int alvium_s_power(struct v4l2_subdev *sd, int on)
+{
+	return 0;
+}
+
 static const struct v4l2_subdev_core_ops alvium_core_ops = {
+	.s_power = alvium_s_power,
 	.log_status = v4l2_ctrl_subdev_log_status,
 	.ioctl = alvium_ioctl,
 	.subscribe_event = v4l2_ctrl_subdev_subscribe_event,
@@ -2879,6 +2885,17 @@ static const struct v4l2_subdev_ops alvium_subdev_ops = {
 	.video	= &alvium_video_ops,
 };
 
+static int alvium_link_setup(struct media_entity *entity,
+			   const struct media_pad *local,
+			   const struct media_pad *remote, u32 flags)
+{
+	return 0;
+}
+
+static const struct media_entity_operations alvium_sd_media_ops = {
+	.link_setup = alvium_link_setup,
+};
+
 static int alvium_subdev_init(struct alvium_dev *alvium)
 {
 	struct i2c_client *client = alvium->i2c_client;
@@ -2904,6 +2921,7 @@ static int alvium_subdev_init(struct alvium_dev *alvium)
 	v4l2_i2c_subdev_init(sd, client, &alvium_subdev_ops);
 
 	sd->flags |= V4L2_SUBDEV_FL_HAS_EVENTS | V4L2_SUBDEV_FL_HAS_DEVNODE;
+	alvium->sd.entity.ops = &alvium_sd_media_ops;
 	alvium->pad.flags = MEDIA_PAD_FL_SOURCE;
 	sd->entity.function = MEDIA_ENT_F_CAM_SENSOR;
 
