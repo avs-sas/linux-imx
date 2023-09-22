@@ -1,0 +1,210 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/clock/imx8mp-clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include "imx8mp-pinfunc.h"
+
+/ {
+	fragment@0 {
+		target = <&iomuxc>;
+		__overlay__ {
+
+			pinctrl_csi0_pwn: csi0_pwn_grp {
+				fsl,pins = <
+					MX8MP_IOMUXC_SD1_STROBE__GPIO2_IO11	0x19
+				>;
+			};
+
+			pinctrl_i2c2: i2c2grp {
+				fsl,pins = <
+					MX8MP_IOMUXC_I2C2_SCL__I2C2_SCL		0x400001c3
+					MX8MP_IOMUXC_I2C2_SDA__I2C2_SDA		0x400001c3
+				>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			reg_vcc_ext_in: regulator-vcc-ext-in {
+				compatible = "regulator-fixed";
+				regulator-name = "vcc-ext-in";
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_csi0_pwn>;
+				regulator-min-microvolt = <5000000>;
+				regulator-max-microvolt = <5000000>;
+				gpio = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+				enable-active-high;
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&i2c2>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_i2c2>;
+			status = "okay";
+
+			/delete-node/ov5640_mipi@3c;
+
+			camera0: alvium@3c {
+				compatible = "alliedvision,alvium-csi2";
+				reg = <0x3c>;
+				vcc-ext-in-supply = <&reg_vcc_ext_in>;
+				alliedvision,lp2hs-delay-us = <80>;
+				status = "okay";
+
+				csi_id = <0>;
+				mclk = <24000000>;
+				mclk_source = <0>;
+
+				port {
+					alvium0_out: endpoint {
+						remote-endpoint = <&mipi_csi0_in>;
+						data-lanes = <1 2 3 4>;
+						link-frequencies = /bits/ 64 <681250000>;
+						clock-lanes = <0>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@3 {
+		target = <&i2c3>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_i2c3>;
+			status = "okay";
+
+			/delete-node/ov5640_mipi@3c;
+
+			camera1: alvium@3c {
+				compatible = "alliedvision,alvium-csi2";
+				reg = <0x3c>;
+				vcc-ext-in-supply = <&reg_vcc_ext_in>;
+				alliedvision,lp2hs-delay-us = <80>;
+				status = "okay";
+
+				csi_id = <1>;
+				mclk = <24000000>;
+				mclk_source = <0>;
+
+				port {
+					alvium1_out: endpoint {
+						remote-endpoint = <&mipi_csi1_in>;
+						data-lanes = <1 2 3 4>;
+						link-frequencies = /bits/ 64 <681250000>;
+						clock-lanes = <0>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@4 {
+		target = <&mipi_csi_0>;
+		__overlay__ {
+			clock-frequency = <681250000>;
+			assigned-clock-rates = <500000000>;
+			status = "okay";
+			data-lanes = <4>;
+
+			port@0 {
+				mipi_csi0_in: endpoint {
+					remote-endpoint = <&alvium0_out>;
+					data-lanes = <4>;
+					csis-hs-settle = <14>;
+					csis-clk-settle = <2>;
+					csis-wclk;
+				};
+			};
+		};
+	};
+
+	fragment@5 {
+		target = <&mipi_csi_1>;
+		__overlay__ {
+			clock-frequency = <681250000>;
+			assigned-clock-rates = <500000000>;
+			status = "okay";
+			data-lanes = <4>;
+
+			port@1 {
+				mipi_csi1_in: endpoint {
+					remote-endpoint = <&alvium1_out>;
+					data-lanes = <4>;
+					csis-hs-settle = <14>;
+					csis-clk-settle = <2>;
+					csis-wclk;
+				};
+			};
+		};
+	};
+
+	fragment@6 {
+		target = <&isi_0>;
+		__overlay__ {
+			status = "okay";
+
+			disable_resolution_check;
+			dma-coherent;
+
+			cap_device {
+				status = "okay";
+			};
+
+			m2m_device {
+				status = "okay";
+			};
+		};
+	};
+
+	fragment@7 {
+		target = <&isi_1>;
+		__overlay__ {
+			status = "okay";
+
+			disable_resolution_check;
+			dma-coherent;
+
+			cap_device {
+				status = "okay";
+			};
+
+			m2m_device {
+				status = "okay";
+			};
+		};
+	};
+
+	fragment@8 {
+		target = <&isp_0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@9 {
+		target = <&isp_1>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@10 {
+		target = <&dewarp>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};
