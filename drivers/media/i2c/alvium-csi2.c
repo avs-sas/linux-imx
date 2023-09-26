@@ -2681,7 +2681,7 @@ static int alvium_probe(struct i2c_client *client)
 	ret = alvium_get_hw_info(alvium);
 	if (ret) {
 		dev_err(dev, "get_hw_info fail %d\n", ret);
-		return ret;
+		return -EPROBE_DEFER;
 	}
 
 	ret = alvium_hw_init(alvium);
