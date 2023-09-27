@@ -1500,39 +1500,43 @@ static int alvium_set_ctrl_white_balance(struct alvium_dev *alvium, bool awb)
 			return ret;
 	}
 
-	if (!awb && ctrls->auto_wb->is_new) {
-		u64 red = (u64)ctrls->red_balance->val;
+	if (!awb && (ctrls->blue_balance->is_new)) {
 		u64 blue = (u64)ctrls->blue_balance->val;
-		u64 red_max;
-		u64 red_min;
 		u64 blue_max;
 		u64 blue_min;
-
-		ret = alvium_get_red_balance_ratio_params(alvium);
-		if (ret)
-			return ret;
 
 		ret = alvium_get_blue_balance_ratio_params(alvium);
 		if (ret)
 			return ret;
 
-		red_max = alvium->max_rbalance;
-		red_min = alvium->min_rbalance;
 		blue_max = alvium->max_bbalance;
-		blue_min = alvium->min_rbalance;
-
-		if (red >= red_min &&
-			  red <= red_max) {
-			ret = alvium_set_red_balance_ratio(alvium, red);
-			if (ret)
-				return ret;
-		} else {
-			return -EINVAL;
-		}
+		blue_min = alvium->min_bbalance;
 
 		if (blue >= blue_min &&
 			  blue <= blue_max) {
 			ret = alvium_set_blue_balance_ratio(alvium, blue);
+			if (ret)
+				return ret;
+		} else {
+			return -EINVAL;
+		};
+	}
+
+	if (!awb && (ctrls->red_balance->is_new)) {
+		u64 red = (u64)ctrls->red_balance->val;
+		u64 red_max;
+		u64 red_min;
+
+		ret = alvium_get_red_balance_ratio_params(alvium);
+		if (ret)
+			return ret;
+
+		red_max = alvium->max_rbalance;
+		red_min = alvium->min_rbalance;
+
+		if (red >= red_min &&
+			  red <= red_max) {
+			ret = alvium_set_red_balance_ratio(alvium, red);
 			if (ret)
 				return ret;
 		} else {
