@@ -1243,9 +1243,6 @@ static int alvium_get_gain(struct alvium_dev *alvium)
 	if (!alvium->bcrm_addr)
 		return -EINVAL;
 
-	if (!alvium->avail_ft.auto_gain)
-		return -EINVAL;
-
 	/* The unit is millibel (1 mB = 0.01 dB) */
 	alvium_read(alvium, REG_BCRM_GAIN_RW, &gain, &ret);
 	if (ret)
@@ -1260,9 +1257,6 @@ static int alvium_set_gain(struct alvium_dev *alvium, int gain)
 	int ret;
 
 	if (!alvium->bcrm_addr)
-		return -EINVAL;
-
-	if (!alvium->avail_ft.auto_gain)
 		return -EINVAL;
 
 	/* The unit is millibel (1 mB = 0.01 dB) */
@@ -1284,7 +1278,7 @@ static int alvium_set_autogain(struct alvium_dev *alvium, bool on)
 		return -EINVAL;
 
 	if (!alvium->avail_ft.auto_gain)
-		return -EINVAL;
+		on = false;
 
 	if (on)
 		ret = alvium_write_hshake(alvium, REG_BCRM_GAIN_AUTO_RW, 0x02);
@@ -1307,9 +1301,6 @@ static int alvium_get_exposure(struct alvium_dev *alvium)
 	if (!alvium->bcrm_addr)
 		return -EINVAL;
 
-	if (!alvium->avail_ft.auto_exp)
-		return -EINVAL;
-
 	/* Exposure time in ns */
 	alvium_read(alvium, REG_BCRM_EXPOSURE_TIME_RW, &exp, &ret);
 	if (ret)
@@ -1327,7 +1318,7 @@ static int alvium_set_autoexposure(struct alvium_dev *alvium, bool on)
 		return -EINVAL;
 
 	if (!alvium->avail_ft.auto_exp)
-		return -EINVAL;
+		on = false;
 
 	if (on)
 		ret = alvium_write_hshake(alvium, REG_BCRM_EXPOSURE_AUTO_RW, 0x02);
@@ -1437,7 +1428,7 @@ static int alvium_set_awb(struct alvium_dev *alvium, bool on)
 		return -EINVAL;
 
 	if (!alvium->avail_ft.auto_whiteb)
-		return -EINVAL;
+		on = false;
 
 	if (on)
 		ret = alvium_write_hshake(alvium, REG_BCRM_WHITE_BALANCE_AUTO_RW, 0x02);
