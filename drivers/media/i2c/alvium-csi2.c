@@ -131,7 +131,7 @@ static const struct alvium_pixfmt alvium_csi2_fmts[] = {
 		.colorspace = V4L2_COLORSPACE_RAW,
 		.fmt_av_bit = ALVIUM_BIT_RAW8,
 		.bay_av_bit = ALVIUM_BIT_BAY_MONO,
-		.mipi_fmt_regval = MIPI_CSI2_DT_RGB888,
+		.mipi_fmt_regval = MIPI_CSI2_DT_RAW8,
 		.bay_fmt_regval = 0x00,
 		.is_raw = 1,
 	}, {
