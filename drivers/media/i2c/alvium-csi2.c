@@ -2299,10 +2299,10 @@ static int alvium_ctrl_init(struct alvium_dev *alvium)
 					     0, 0, &alvium->link_freq);
 
 	/* Auto/manual white balance */
-	if (alvium->avail_ft.auto_whiteb)
-		ctrls->auto_wb = v4l2_ctrl_new_std(hdl, ops,
-					     V4L2_CID_AUTO_WHITE_BALANCE,
-					     0, 1, 1, 1);
+	ctrls->auto_wb = v4l2_ctrl_new_std(hdl, ops,
+						V4L2_CID_AUTO_WHITE_BALANCE,
+						0, 1, 1,
+						alvium->avail_ft.auto_whiteb ? 1 : 0);
 
 	ctrls->blue_balance = v4l2_ctrl_new_std(hdl, ops,
 					     V4L2_CID_BLUE_BALANCE,
@@ -2318,11 +2318,11 @@ static int alvium_ctrl_init(struct alvium_dev *alvium)
 					     alvium->min_rbalance);
 
 	/* Auto/manual exposure */
-	if (alvium->avail_ft.auto_exp)
-		ctrls->auto_exp = v4l2_ctrl_new_std_menu(hdl, ops,
-					     V4L2_CID_EXPOSURE_AUTO,
-					     V4L2_EXPOSURE_MANUAL, 0,
-					     V4L2_EXPOSURE_AUTO);
+	ctrls->auto_exp = v4l2_ctrl_new_std_menu(hdl, ops,
+						V4L2_CID_EXPOSURE_AUTO,
+						V4L2_EXPOSURE_MANUAL, 0,
+						alvium->avail_ft.auto_exp ?
+						V4L2_EXPOSURE_AUTO : V4L2_EXPOSURE_MANUAL);
 
 	ctrls->exposure = v4l2_ctrl_new_std(hdl, ops,
 					     V4L2_CID_EXPOSURE,
@@ -2332,10 +2332,10 @@ static int alvium_ctrl_init(struct alvium_dev *alvium)
 					     alvium->min_exp);
 
 	/* Auto/manual gain */
-	if (alvium->avail_ft.auto_gain)
-		ctrls->auto_gain = v4l2_ctrl_new_std(hdl, ops,
-					     V4L2_CID_AUTOGAIN,
-					     0, 1, 1, 1);
+	ctrls->auto_gain = v4l2_ctrl_new_std(hdl, ops,
+						V4L2_CID_AUTOGAIN,
+						0, 1, 1,
+						alvium->avail_ft.auto_gain ? 1 : 0);
 
 	if (alvium->avail_ft.gain)
 		ctrls->gain = v4l2_ctrl_new_std(hdl, ops,
