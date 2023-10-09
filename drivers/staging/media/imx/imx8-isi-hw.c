@@ -339,6 +339,21 @@ void mxc_isi_channel_set_csc(struct mxc_isi_dev *mxc_isi,
 
 	mxc_isi->cscen = 1;
 
+	if(dst_fmt->fourcc == V4L2_PIX_FMT_GREY)
+	{
+		goto bypass_csc;
+	}
+
+	if(dst_fmt->fourcc == V4L2_PIX_FMT_Y10)
+	{
+		goto bypass_csc;
+	}
+
+	if(dst_fmt->fourcc == V4L2_PIX_FMT_Y12)
+	{
+		goto bypass_csc;
+	}
+
 	if (is_yuv(src_fmt->fourcc) && is_rgb(dst_fmt->fourcc)) {
 		/* YUV2RGB */
 		csc = YUV2RGB;
@@ -351,6 +366,7 @@ void mxc_isi_channel_set_csc(struct mxc_isi_dev *mxc_isi,
 		val |= (CHNL_IMG_CTRL_CSC_MODE_RGB2YCBCR << CHNL_IMG_CTRL_CSC_MODE_OFFSET);
 	} else {
 		/* Bypass CSC */
+bypass_csc:
 		pr_info("bypass csc\n");
 		mxc_isi->cscen = 0;
 		val |= CHNL_IMG_CTRL_CSC_BYPASS_ENABLE;
@@ -651,8 +667,9 @@ void mxc_isi_channel_config(struct mxc_isi_dev *mxc_isi,
 	val &= ~CHNL_CTRL_CHNL_BYPASS_MASK;
 
 	/*  Bypass channel */
-	if (!mxc_isi->cscen && !mxc_isi->scale)
+	if (!mxc_isi->cscen && !mxc_isi->scale) {
 		val |= (CHNL_CTRL_CHNL_BYPASS_ENABLE << CHNL_CTRL_CHNL_BYPASS_OFFSET);
+	}
 
 	writel(val, mxc_isi->regs + CHNL_CTRL);
 }

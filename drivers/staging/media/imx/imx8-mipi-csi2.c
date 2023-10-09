@@ -477,10 +477,22 @@ static void mxc_mipi_csi2_disable(struct mxc_mipi_csi2_dev *csi2dev)
 
 static void mxc_mipi_csi2_csr_config(struct mxc_mipi_csi2_dev *csi2dev)
 {
+	struct v4l2_mbus_framefmt *mf = &csi2dev->format;
 	u32 val;
 
-	/* format */
-	val = 0;
+	/* formats */
+	if (mf->code == MEDIA_BUS_FMT_Y8_1X8) {
+		val = (u32)~CSI2SS_DATA_TYPE_RAW8;
+	}
+	if (mf->code == MEDIA_BUS_FMT_Y10_1X10) {
+		val = (u32)~CSI2SS_DATA_TYPE_RAW10;
+	}
+	if (mf->code == MEDIA_BUS_FMT_Y12_1X12) {
+		val = (u32)~CSI2SS_DATA_TYPE_RAW12;
+	} else {
+		val = 0;
+	}
+
 	writel(val, csi2dev->csr_regs + CSI2SS_DATA_TYPE);
 
 	/* polarity */
@@ -505,8 +517,10 @@ static void mxc_mipi_csi2_csr_config(struct mxc_mipi_csi2_dev *csi2dev)
 
 static void mxc_mipi_csi2_hc_config(struct mxc_mipi_csi2_dev *csi2dev)
 {
+	struct v4l2_mbus_framefmt *mf = &csi2dev->format;
 	u32 val0, val1;
 	u32 i;
+	u32 virtualChannel;
 
 	val0 = 0;
 
@@ -523,7 +537,15 @@ static void mxc_mipi_csi2_hc_config(struct mxc_mipi_csi2_dev *csi2dev)
 	writel(0x1FF, csi2dev->base_regs + CSI2RX_IRQ_MASK);
 
 	/* vid_vc */
-	writel(3, csi2dev->base_regs + 0x184);
+	if (mf->code == MEDIA_BUS_FMT_Y8_1X8 ||
+		mf->code == MEDIA_BUS_FMT_Y10_1X10 ||
+		mf->code == MEDIA_BUS_FMT_Y12_1X12) {
+		virtualChannel = 0;
+		printk("%s, %s, %d, Virtual Channel = %d\n", __FILE__, __FUNCTION__, __LINE__, virtualChannel);
+		writel(virtualChannel, csi2dev->base_regs + 0x184);
+	} else {
+		writel(3, csi2dev->base_regs + 0x184);
+	}
 }
 
 static struct media_pad *mxc_csi2_get_remote_sensor_pad(struct mxc_mipi_csi2_dev *csi2dev)

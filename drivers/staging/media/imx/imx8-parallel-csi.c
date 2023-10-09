@@ -365,14 +365,26 @@ static void mxc_pcsi_sw_reset(struct mxc_parallel_csi_dev *pcsidev)
 static void mxc_pcsi_csr_config(struct mxc_parallel_csi_dev *pcsidev)
 {
 	const struct mxc_pcsi_plat_data *pdata = pcsidev->pdata;
+	struct v4l2_mbus_framefmt *mf = &pcsidev->format;
 	u32 val;
 
 	/* Software Reset */
 	mxc_pcsi_sw_reset(pcsidev);
 
 	/* Config PL Data Type */
-	val = readl(pcsidev->csr_regs + pdata->if_ctrl_reg);
-	val |= IF_CTRL_REG_DATA_TYPE(DATA_TYPE_OUT_YUV444);
+	if (mf->code == MEDIA_BUS_FMT_Y8_1X8) {
+		val = IF_CTRL_REG_DATA_TYPE(DATA_TYPE_OUT_RAW) | (1<<8);
+	}
+	else if (mf->code == MEDIA_BUS_FMT_Y10_1X10) {
+		val = IF_CTRL_REG_DATA_TYPE(DATA_TYPE_OUT_RAW) | (1<<8);
+	}
+	else if (mf->code == MEDIA_BUS_FMT_Y12_1X12){
+		val = IF_CTRL_REG_DATA_TYPE(DATA_TYPE_OUT_RAW) | (1<<8);
+	}
+	else {
+		val |= IF_CTRL_REG_DATA_TYPE(DATA_TYPE_OUT_YUV444);
+	}
+
 	writel(val, pcsidev->csr_regs + pdata->if_ctrl_reg);
 
 	/* Enable sync Force */
@@ -393,12 +405,23 @@ static void mxc_pcsi_csr_config(struct mxc_parallel_csi_dev *pcsidev)
 	/* Config CTRL REG */
 	val = readl(pcsidev->csr_regs + pdata->interface_ctrl_reg);
 
-	val |= (CSI_CTRL_REG_DATA_TYPE_IN(pdata->def_csi_in_data_type) |
-		pdata->def_hsync_pol << CSI_CTRL_REG_HSYNC_POL_OFFSET |
-		pdata->def_vsync_pol << CSI_CTRL_REG_VSYNC_POL_OFFSET |
-		pdata->def_pixel_clk_pol << CSI_CTRL_REG_PIXEL_CLK_POL_OFFSET |
-		CSI_CTRL_REG_MASK_VSYNC_COUNTER(3) |
-		CSI_CTRL_REG_HSYNC_PULSE(2));
+	if (mf->code==MEDIA_BUS_FMT_Y8_1X8) {
+		val |= (CSI_CTRL_REG_DATA_TYPE_IN(DATA_TYPE_IN_BAYER_16BITS));
+	}
+	else if (mf->code==MEDIA_BUS_FMT_Y10_1X10) {
+		val |= (CSI_CTRL_REG_DATA_TYPE_IN(DATA_TYPE_IN_BAYER_16BITS));
+	}
+	else if (mf->code==MEDIA_BUS_FMT_Y12_1X12) {
+		val |= (CSI_CTRL_REG_DATA_TYPE_IN(DATA_TYPE_IN_BAYER_16BITS));
+	}
+	else {
+		val |= (CSI_CTRL_REG_DATA_TYPE_IN(pdata->def_csi_in_data_type) |
+			pdata->def_hsync_pol << CSI_CTRL_REG_HSYNC_POL_OFFSET |
+			pdata->def_vsync_pol << CSI_CTRL_REG_VSYNC_POL_OFFSET |
+			pdata->def_pixel_clk_pol << CSI_CTRL_REG_PIXEL_CLK_POL_OFFSET |
+			CSI_CTRL_REG_MASK_VSYNC_COUNTER(3) |
+			CSI_CTRL_REG_HSYNC_PULSE(2));
+	}
 
 	if (pcsidev->uv_swap)
 		val |= CSI_CTRL_REG_UV_SWAP_EN;
