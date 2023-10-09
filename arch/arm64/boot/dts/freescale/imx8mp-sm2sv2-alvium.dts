@@ -1,0 +1,368 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2023 Avnet Silica
+ */
+
+#include "imx8mp-evk.dts"
+
+/ {
+	memory@40000000 {
+		device_type = "memory";
+		reg =
+			<0x0 0x40000000 0 0x80000000>, /* bank0, 2GiB */
+			<0x0 0xc0000000 0 0x80000000>; /* bank1, 2GiB */
+	};
+
+	reg0_vcc_ext_in: regulator0-vcc-ext-in {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-ext-in";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi0_pwn>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	reg1_vcc_ext_in: regulator1-vcc-ext-in {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-ext-in";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi1_pwn>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio4 1 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&dewarp {
+	status = "okay";
+};
+
+&iomuxc {
+	pinctrl_csi0_pwn: csi0_pwn_grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11	0x19
+		>;
+	};
+
+	pinctrl_csi1_pwn: csi0_pwn_grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SAI1_RXC__GPIO4_IO01	0x19
+		>;
+	};
+
+	pinctrl_i2c4: i2c4grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_I2C4_SCL__I2C4_SCL		0x400001c3
+			MX8MP_IOMUXC_I2C4_SDA__I2C4_SDA		0x400001c3
+		>;
+	};
+
+	pinctrl_i2c5: i2c5grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SPDIF_TX__I2C5_SCL		0x400001c3
+			MX8MP_IOMUXC_SPDIF_RX__I2C5_SDA		0x400001c3
+		>;
+	};
+
+	pinctrl_ioexpander: ioexpandergrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO09__GPIO1_IO09			0x41
+		>;
+	};
+};
+
+&eqos {
+	phy-reset-gpios = <&ioexpander 16 GPIO_ACTIVE_LOW>;
+};
+
+&fec {
+	phy-reset-gpios = <&ioexpander 17 GPIO_ACTIVE_LOW>;
+};
+
+&i2c2 {
+	/delete-node/ov5640_mipi@3c;
+};
+
+&i2c3 {
+	/delete-node/ov5640_mipi@3c;
+};
+
+&i2c4 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c4>;
+	status = "okay";
+
+	camera0: alvium@3c {
+		compatible = "alliedvision,alvium-csi2";
+		reg = <0x3c>;
+		vcc-ext-in-supply = <&reg0_vcc_ext_in>;
+		alliedvision,lp2hs-delay-us = <80>;
+		status = "okay";
+
+		csi_id = <0>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+
+		port {
+			alvium0_out: endpoint {
+				remote-endpoint = <&mipi_csi0_in>;
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <681250000>;
+				clock-lanes = <0>;
+			};
+		};
+	};
+};
+
+&i2c5 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c5>;
+	status = "okay";
+
+	camera1: alvium@3c {
+		compatible = "alliedvision,alvium-csi2";
+		reg = <0x3c>;
+		vcc-ext-in-supply = <&reg1_vcc_ext_in>;
+		alliedvision,lp2hs-delay-us = <80>;
+		status = "okay";
+
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+
+		port {
+			alvium1_out: endpoint {
+				remote-endpoint = <&mipi_csi1_in>;
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <681250000>;
+				clock-lanes = <0>;
+			};
+		};
+	};
+};
+
+&i2c6 {
+	ioexpander: gpio@22 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ioexpander>;
+		compatible = "ti,tca6424";
+		reg = <0x22>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <9 IRQ_TYPE_EDGE_RISING>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		/* P0.0 -> boot_sel0 */
+		boot_sel0 {
+			gpio-hog;
+			input;
+			gpios = <0 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* P0.1 -> boot_sel1 */
+		boot_sel1 {
+			gpio-hog;
+			input;
+			gpios = <1 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* P0.2 -> boot_sel2 */
+		boot_sel2 {
+			gpio-hog;
+			input;
+			gpios = <2 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* P0.3 -> gbe0_int */
+		gbe0_int {
+			gpio-hog;
+			input;
+			gpios = <3 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P0.4 -> gbe1_int */
+		gbe1_int {
+			gpio-hog;
+			input;
+			gpios = <4 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P0.5 -> pmic_int */
+		/* P0.6 -> rtc_int */
+		/* P0.7 -> lvds_int */
+		lvds_int {
+			gpio-hog;
+			input;
+			gpios = <7 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* P1.0 -> pcie_wake */
+		pcie_wake {
+			gpio-hog;
+			input;
+			gpios = <8 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.1 -> cam2_rst */
+		cam2_rst {
+			gpio-hog;
+			output-high;
+			gpios = <9 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.2 -> cam2_pwr */
+		cam2_pwr {
+			gpio-hog;
+			output-high;
+			gpios = <10 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.3 -> sleep */
+		sleep {
+			gpio-hog;
+			input;
+			gpios = <11 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.4 -> wifi_pd */
+		/* P1.5 -> tpm_int */
+		tpm_int {
+			gpio-hog;
+			input;
+			gpios = <13 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.6 -> wifi_int */
+		wifi_int {
+			gpio-hog;
+			input;
+			gpios = <14 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P1.7 -> pcie_a_rst */
+
+		/* P2.0 -> gbe0_rst */
+		/* P2.1 -> gbe1_rst */
+		/* P2.2 -> lid */
+		lid {
+			gpio-hog;
+			input;
+			gpios = <18 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P2.3 -> batlow */
+		batlow {
+			gpio-hog;
+			input;
+			gpios = <19 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P2.4 -> charging */
+		charging {
+			gpio-hog;
+			input;
+			gpios = <20 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P2.5 -> charger_prsnt */
+		charger_prsnt {
+			gpio-hog;
+			input;
+			gpios = <21 GPIO_ACTIVE_LOW>;
+		};
+
+		/* P2.6 */
+		/* P2.7 */
+	};
+};
+
+&isi_0 {
+	status = "okay";
+
+	disable_resolution_check;
+	dma-coherent;
+
+	cap_device {
+		status = "okay";
+	};
+
+	m2m_device {
+		status = "okay";
+	};
+};
+
+&isi_1 {
+	status = "okay";
+
+	disable_resolution_check;
+	dma-coherent;
+
+	cap_device {
+		status = "okay";
+	};
+
+	m2m_device {
+		status = "okay";
+	};
+};
+
+&isp_0 {
+	status = "disabled";
+};
+
+&isp_1 {
+	status = "disabled";
+};
+
+&mipi_csi_0 {
+	clock-frequency = <681250000>;
+	assigned-clock-rates = <500000000>;
+	status = "okay";
+	data-lanes = <4>;
+
+	port@0 {
+		mipi_csi0_in: endpoint {
+			remote-endpoint = <&alvium0_out>;
+			data-lanes = <4>;
+			csis-hs-settle = <14>;
+			csis-clk-settle = <2>;
+			csis-wclk;
+		};
+	};
+};
+
+&mipi_csi_1 {
+	clock-frequency = <681250000>;
+	assigned-clock-rates = <500000000>;
+	status = "okay";
+	data-lanes = <4>;
+
+	port@1 {
+		mipi_csi1_in: endpoint {
+			remote-endpoint = <&alvium1_out>;
+			data-lanes = <4>;
+			csis-hs-settle = <14>;
+			csis-clk-settle = <2>;
+			csis-wclk;
+		};
+	};
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pcie_ep {
+	status = "disabled";
+};
