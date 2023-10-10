@@ -2370,7 +2370,7 @@ static int alvium_ctrl_init(struct alvium_dev *alvium)
 					     alvium->min_contrast);
 
 	if (alvium->avail_ft.gamma)
-		ctrls->contrast = v4l2_ctrl_new_std(hdl, ops,
+		ctrls->gamma = v4l2_ctrl_new_std(hdl, ops,
 					     V4L2_CID_GAMMA,
 					     alvium->min_gamma,
 					     alvium->max_gamma,
@@ -2378,7 +2378,7 @@ static int alvium_ctrl_init(struct alvium_dev *alvium)
 					     alvium->min_gamma);
 
 	if (alvium->avail_ft.sharp)
-		ctrls->contrast = v4l2_ctrl_new_std(hdl, ops,
+		ctrls->sharpness = v4l2_ctrl_new_std(hdl, ops,
 					     V4L2_CID_SHARPNESS,
 					     alvium->min_sharp,
 					     alvium->max_sharp,
