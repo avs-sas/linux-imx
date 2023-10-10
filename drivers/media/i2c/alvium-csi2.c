@@ -1209,7 +1209,7 @@ static int alvium_set_frame_rate(struct alvium_dev *alvium)
 		return ret;
 	}
 
-	dev_dbg(dev, "set frame rate: %llu us\n", fr);
+	dev_dbg(dev, "set frame rate: %llu uHz\n", fr);
 
 	return 0;
 }
