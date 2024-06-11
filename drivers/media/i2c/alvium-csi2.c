@@ -2302,8 +2302,105 @@ free_ctrls:
 	return ret;
 }
 
+static int alvium_cmd_fw_update_read(struct v4l2_subdev *sd, void *arg)
+{
+	struct alvium_dev *alvium = sd_to_alvium(sd);
+	struct device *dev = &alvium->i2c_client->dev;
+	struct alvium_fw_i2c_proto *proto = (struct alvium_fw_i2c_proto *)arg;
+	char *buf;
+	int ret;
+
+	buf = kzalloc(proto->num_bytes, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	ret = regmap_bulk_read(alvium->regmap, proto->reg_addr,
+			       buf, proto->num_bytes);
+	if (ret)
+		goto fw_read_done;
+
+	ret = copy_to_user((char *)proto->buf, buf, proto->num_bytes);
+	if (ret)
+		goto fw_read_done;
+
+fw_read_done:
+	if (ret)
+		dev_dbg(dev, "failed=%d, bytes read = %d\n",
+			ret, proto->num_bytes);
+
+	kfree(buf);
+	return ret;
+}
+
+static int alvium_cmd_fw_update_write(struct v4l2_subdev *sd, void *arg)
+{
+	struct alvium_dev *alvium = sd_to_alvium(sd);
+	struct device *dev = &alvium->i2c_client->dev;
+	struct alvium_fw_i2c_proto *proto = (struct alvium_fw_i2c_proto *)arg;
+	char *buf;
+	int ret = 0;
+
+	if (proto->reg_addr == 0x021c)
+		alvium_write(alvium, REG_GENCP_CHANGEMODE_W,
+			     ALVIUM_GENCP_MODE, &ret);
+
+	buf = kzalloc(proto->num_bytes, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	ret = copy_from_user(buf, (char *)proto->buf, proto->num_bytes);
+	if (ret)
+		goto fw_write_done;
+
+	ret = regmap_bulk_write(alvium->regmap, proto->reg_addr,
+				buf, proto->num_bytes);
+	if (ret)
+		goto fw_write_done;
+
+fw_write_done:
+	kfree(buf);
+	if (ret) {
+		dev_dbg(dev, "failed=%d, bytes write = %d\n",
+			ret, proto->num_bytes);
+		return ret;
+	}
+
+	/*
+	 * Return proper number of bytes processed + reg size.
+	 */
+	ret = proto->num_bytes + 2;
+
+	return ret;
+}
+
+static int alvium_cmd_csi_cfg(struct v4l2_subdev *sd, void *arg)
+{
+	struct alvium_dev *alvium = sd_to_alvium(sd);
+	struct alvium_fw_csi_cfg *cfg = (struct alvium_fw_csi_cfg *)arg;
+
+	cfg->lane_cnt = alvium->h_sup_csi_lanes;
+	cfg->csi_clk = alvium->link_freq;
+
+	return 0;
+}
+
+static long alvium_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
+{
+	switch (cmd) {
+	case ALVIUM_FW_UPDATE_I2C_R:
+		return alvium_cmd_fw_update_read(sd, arg);
+	case ALVIUM_FW_UPDATE_I2C_W:
+		return alvium_cmd_fw_update_write(sd, arg);
+	case ALVIUM_FW_GET_CSI_CFG_I2C_R:
+		return alvium_cmd_csi_cfg(sd, arg);
+	}
+
+	return -ENOIOCTLCMD;
+}
+
 static const struct v4l2_subdev_core_ops alvium_core_ops = {
 	.log_status = v4l2_ctrl_subdev_log_status,
+	.ioctl = alvium_ioctl,
 	.subscribe_event = v4l2_ctrl_subdev_subscribe_event,
 	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
 };

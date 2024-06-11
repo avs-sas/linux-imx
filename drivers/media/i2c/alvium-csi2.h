@@ -491,4 +491,26 @@ static inline struct v4l2_subdev *ctrl_to_sd(struct v4l2_ctrl *ctrl)
 	return &container_of_const(ctrl->handler, struct alvium_dev,
 					  ctrls.handler)->sd;
 }
+
+struct alvium_fw_i2c_proto {
+	u32 reg_addr;
+	u32 timeout;
+	const char *buf;
+	u32 reg_size;
+	u32 num_bytes;
+};
+
+struct alvium_fw_csi_cfg {
+	u8 lane_cnt;
+	u32 csi_clk;
+};
+
+#define ALVIUM_FW_UPDATE_I2C_R \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 0, struct alvium_fw_i2c_proto)
+#define ALVIUM_FW_UPDATE_I2C_W \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 1, struct alvium_fw_i2c_proto)
+#define ALVIUM_FW_GET_CSI_CFG_I2C_R \
+	_IOR('V', BASE_VIDIOC_PRIVATE + 18, struct alvium_fw_csi_cfg)
+
+
 #endif /* ALVIUM_CSI2_H_ */
