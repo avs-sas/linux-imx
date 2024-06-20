@@ -132,6 +132,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb imx8mp-evk-rm67191.dtb imx8mp-evk-it626
 			  imx8mm-sm2s.dtb \
 			  imx8mp-sm2sv2-alvium-gmsl2.dtb \
 			  imx8mp-sm2sv2-alvium-csi0-gmsl2.dtb \
+			  imx8mp-sm2sv2-alvium-csi1-gmsl2.dtb \
 			  imx8mp-evk-dpdk.dtb imx8mp-evk-8mic-swpdm.dtb imx8mp-evk-rpmsg-lpv.dtb imx8mp-evk-revA3-8mic-revE.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mp-msc-sm2s-ep1.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mp-phyboard-pollux-rdk.dtb
