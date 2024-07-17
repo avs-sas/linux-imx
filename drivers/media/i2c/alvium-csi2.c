@@ -536,6 +536,29 @@ static void alvium_print_avail_bayer(struct alvium_dev *alvium)
 		alvium->is_bay_avail[ALVIUM_BIT_BAY_BG]);
 }
 
+static int alvium_get_dev_capabilities(struct alvium_dev *alvium)
+{
+	struct device *dev = &alvium->i2c_client->dev;
+	struct alvium_dev_cap *caps;
+	u64 val;
+	int ret;
+
+	ret = alvium_read(alvium, REG_GENCP_DEV_CAP_RW, &val, NULL);
+	if (ret)
+		return ret;
+
+	caps = (struct alvium_dev_cap *)&val;
+	alvium->caps = *caps;
+
+	dev_dbg(dev, "cap user_name: %u\n", alvium->caps.user_name);
+	dev_dbg(dev, "cap bcrm: %u\n", alvium->caps.bcrm);
+	dev_dbg(dev, "cap gencp: %u\n", alvium->caps.gencp);
+	dev_dbg(dev, "cap string_encoding: %u\n", alvium->caps.string_encoding);
+	dev_dbg(dev, "cap family_name: %u\n", alvium->caps.family_name);
+
+	return 0;
+}
+
 static int alvium_get_feat_inq(struct alvium_dev *alvium)
 {
 	struct alvium_avail_feat *f;
@@ -1598,6 +1621,12 @@ static int alvium_get_hw_info(struct alvium_dev *alvium)
 	ret = alvium_get_feat_inq(alvium);
 	if (ret) {
 		dev_err(dev, "Fail to read bcrm feature inquiry reg\n");
+		return ret;
+	}
+
+	ret = alvium_get_dev_capabilities(alvium);
+	if (ret) {
+		dev_err(dev, "Fail to read dev caps reg\n");
 		return ret;
 	}
 

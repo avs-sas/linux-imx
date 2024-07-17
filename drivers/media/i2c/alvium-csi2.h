@@ -185,6 +185,7 @@
 #define REG_BCRM_HEARTBEAT_RW				CCI_REG8(0x021f)
 
 /* GenCP Registers */
+#define REG_GENCP_DEV_CAP_RW				CCI_REG64(0x0008)
 #define REG_GENCP_CHANGEMODE_W				CCI_REG8(0x021c)
 #define REG_GENCP_CURRENTMODE_R				CCI_REG8(0x021d)
 #define REG_GENCP_IN_HANDSHAKE_RW			CCI_REG8(0x001c)
@@ -355,6 +356,16 @@ struct alvium_pixfmt {
 	u8 bay_av_bit;
 };
 
+struct alvium_dev_cap {
+	u64 user_name:1;
+	u64 bcrm:1;
+	u64 gencp:1;
+	u64 reserved1:1;
+	u64 string_encoding:4;
+	u64 family_name:1;
+	u64 reserved2:55;
+};
+
 struct alvium_ctrls {
 	struct v4l2_ctrl_handler handler;
 	struct v4l2_ctrl *pixel_rate;
@@ -385,6 +396,8 @@ struct alvium_dev {
 	struct regulator *reg_vcc;
 
 	u16 bcrm_addr;
+
+	struct alvium_dev_cap caps;
 
 	struct alvium_avail_feat avail_ft;
 	u8 is_mipi_fmt_avail[ALVIUM_NUM_SUPP_MIPI_DATA_BIT];
