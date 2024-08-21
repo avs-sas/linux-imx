@@ -2016,6 +2016,92 @@ static ssize_t set_csi_freq_mhz_store(struct device *dev,
 }
 static DEVICE_ATTR_WO(set_csi_freq_mhz);
 
+static void alvium_fw_store_last_regdata(struct alvium_dev *alvium,
+					 struct alvium_fw_proto *proto)
+{
+	alvium->ldata.reg = proto->reg;
+	alvium->ldata.count = proto->count;
+}
+
+static ssize_t alvium_fw_transfer(struct device *dev,
+				  struct device_attribute *attr,
+				  const char *buf, size_t count)
+{
+	struct v4l2_subdev *sd = dev_get_drvdata(dev);
+	struct alvium_dev *alvium = sd_to_alvium(sd);
+	struct alvium_fw_proto *proto;
+	char *kbuf;
+	char *data;
+	int ret = 0;
+
+	switch (alvium->fw_op) {
+	case ALVIUM_FW_READ:
+		kbuf = kzalloc(alvium->ldata.count, GFP_KERNEL);
+		if (!kbuf)
+			return -ENOMEM;
+
+		ret = regmap_bulk_read(alvium->regmap, alvium->ldata.reg,
+				       (char *)kbuf, alvium->ldata.count);
+		if (ret)
+			goto fw_transfer_done;
+
+		memcpy((char *)buf, kbuf, alvium->ldata.count);
+
+		ret = alvium->ldata.count;
+		break;
+
+	case ALVIUM_FW_WRITE:
+		proto = (struct alvium_fw_proto *)buf;
+		data = (char *)(proto + 1);
+
+		kbuf = kzalloc(proto->count, GFP_KERNEL);
+		if (!kbuf)
+			return -ENOMEM;
+
+		memcpy(kbuf, data, proto->count);
+
+		ret = regmap_bulk_write(alvium->regmap, proto->reg,
+					kbuf, proto->count);
+		if (ret)
+			goto fw_transfer_done;
+
+		ret = proto->count;
+		break;
+	}
+
+fw_transfer_done:
+	kfree(kbuf);
+	return ret;
+}
+
+static ssize_t fw_transfer_show(struct device *dev,
+				struct device_attribute *attr,
+				char *buf)
+{
+	return alvium_fw_transfer(dev, attr, buf, 0);
+}
+
+static ssize_t fw_transfer_store(struct device *dev,
+				 struct device_attribute *attr,
+				 const char *buf, size_t count)
+{
+	struct v4l2_subdev *sd = dev_get_drvdata(dev);
+	struct alvium_dev *alvium = sd_to_alvium(sd);
+	struct alvium_fw_proto *proto = (struct alvium_fw_proto *)buf;
+	int ret = 0;
+
+	if (proto->op) {
+		alvium->fw_op = ALVIUM_FW_READ;
+		alvium_fw_store_last_regdata(alvium, proto);
+		return ret;
+	} else {
+		alvium->fw_op = ALVIUM_FW_WRITE;
+	}
+
+	return alvium_fw_transfer(dev, attr, buf, count);
+}
+static DEVICE_ATTR_RW(fw_transfer);
+
 static int alvium_sysfs_add_dev_info(struct alvium_dev *alvium)
 {
 	struct device *dev = &alvium->i2c_client->dev;
@@ -2117,6 +2203,12 @@ static int alvium_sysfs_add_dev_info(struct alvium_dev *alvium)
 		return ret;
 	}
 
+	ret = device_create_file(dev, &dev_attr_fw_transfer);
+	if (ret) {
+		device_remove_file(dev, &dev_attr_fw_transfer);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -2140,6 +2232,7 @@ static void alvium_sysfs_rm_dev_info(struct alvium_dev *alvium)
 	device_remove_file(dev, &dev_attr_mode);
 	device_remove_file(dev, &dev_attr_device_version);
 	device_remove_file(dev, &dev_attr_set_csi_freq_mhz);
+	device_remove_file(dev, &dev_attr_fw_transfer);
 }
 
 /* --------------- Subdev Operations --------------- */

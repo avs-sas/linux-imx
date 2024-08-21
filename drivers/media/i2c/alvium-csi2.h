@@ -227,6 +227,19 @@
 #define DRV_VER_PATCH 0
 #define DRV_VER_BUILD 0
 
+enum alvium_fw_ops {
+	ALVIUM_FW_WRITE,
+	ALVIUM_FW_READ,
+	ALVIUM_NUM_FW_OPS
+};
+
+struct alvium_fw_proto {
+	u16 reg;
+	u16 count;
+	u8 op;
+	u8 reserved[3];
+};
+
 enum alvium_bcrm_mode {
 	ALVIUM_BCM_MODE,
 	ALVIUM_GENCP_MODE,
@@ -494,6 +507,9 @@ struct alvium_dev {
 
 	u8 streaming;
 	u8 apply_fiv;
+
+	u8 fw_op;
+	struct alvium_fw_proto ldata;
 };
 
 static inline struct alvium_dev *sd_to_alvium(struct v4l2_subdev *sd)
